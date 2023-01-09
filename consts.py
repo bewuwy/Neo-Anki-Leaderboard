@@ -1,0 +1,1 @@
+POCKETBASE_URL = 'https://pb-anki-lb.fly.dev/'
