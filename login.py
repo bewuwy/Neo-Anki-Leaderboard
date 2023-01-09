@@ -56,15 +56,18 @@ def login_user(user, password) -> None:
     pb = PB(POCKETBASE_URL)
 
     try:
-        user_data = pb.login(user, password)
+        pb.login(user, password)
+        user = pb.user
     except:
-        user_data = None
+        user = None
         
-    if user_data is None:
+    if user is None:
         showInfo("Login failed")
         return on_login_success
     
-    showInfo(user_data)
+    showInfo(user.token)
+    
+    mw.NAL_PB = pb
     
     return on_login_success
 

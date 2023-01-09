@@ -2,6 +2,8 @@ from aqt import mw, gui_hooks
 from aqt.utils import showInfo
 from aqt.qt import *
 
+import datetime
+
 import sys
 # check if system is windows
 if sys.platform.startswith("win"):
@@ -19,7 +21,15 @@ def log_review_count(show=False):
 
     if show:
         showInfo(f"Review count today: {get_review_count_today()}")
-
+        
+def on_anki_sync():
+    r = get_review_count_today()
+    
+    try:
+        mw.NAL_PB.user.set_reviews(datetime.datetime.now(), r)
+    except:
+        return
+    
 # ===========
 # MAIN
 # ===========
@@ -30,6 +40,7 @@ log("="*20)
 
 # setup hooks
 gui_hooks.sync_did_finish.append(log_review_count)
+gui_hooks.sync_did_finish.append(on_anki_sync)
 
 # setup menu
 menu = QMenu("LeaderBoard", mw)
