@@ -9,8 +9,11 @@ import sys
 if sys.platform.startswith("win"):
     sys.path.append( os.path.join(os.getenv('APPDATA'), 'Anki2', 'addons21', 'neo-leaderboard'))
 
+
 from anki_stats import get_review_count_today
+from pocketbase_api import PB, User
 import login
+from consts import POCKETBASE_URL, ADDON_FOLDER
 
 # dev
 def log(msg):
@@ -21,13 +24,29 @@ def log_review_count(show=False):
 
     if show:
         showInfo(f"Review count today: {get_review_count_today()}")
+    
+def on_load():
+    # read user data from config
+    config = mw.addonManager.getConfig(ADDON_FOLDER)
+    
+    if config and "user_data" in config:        
+        user_data = config["user_data"]
+        
+        pb = PB(POCKETBASE_URL)
+        pb.user = User(user_data, pb)
+        
+        mw.NAL_PB = pb
         
 def on_anki_sync():
     r = get_review_count_today()
     
     try:
         mw.NAL_PB.user.set_reviews(datetime.datetime.now(), r)
-    except:
+        
+        # showInfo(f"Synced review count to NAL: {r}")
+    except Exception as e:
+        showInfo(f"Error syncing review count to NAL: {e}")
+        
         return
     
 # ===========
@@ -41,6 +60,7 @@ log("="*20)
 # setup hooks
 gui_hooks.sync_did_finish.append(log_review_count)
 gui_hooks.sync_did_finish.append(on_anki_sync)
+gui_hooks.profile_did_open.append(on_load)
 
 # setup menu
 menu = QMenu("LeaderBoard", mw)

@@ -5,7 +5,7 @@ from aqt.operations import QueryOp
 
 
 from pocketbase_api import PB
-from consts import POCKETBASE_URL
+from consts import POCKETBASE_URL, ADDON_FOLDER
 
 
 class LoginDialog(QWidget):
@@ -68,6 +68,19 @@ def login_user(user, password) -> None:
     showInfo(user.token)
     
     mw.NAL_PB = pb
+    
+    # write user data to config
+    config = mw.addonManager.getConfig(ADDON_FOLDER)
+    if not config:
+        config = {}
+    
+    config["user_data"] = {
+        "record": {
+            "id": user.id,
+        },
+        "token": user.token
+    }
+    mw.addonManager.writeConfig(ADDON_FOLDER, config)
     
     return on_login_success
 
