@@ -1,14 +1,18 @@
 from aqt import mw, gui_hooks
 from aqt.utils import showInfo
+from aqt.operations import QueryOp
 from aqt.qt import *
-
-from pocketbase import PocketBase
 import datetime
 
+import sys
+# check if system is windows
+if sys.platform.startswith("win"):
+    sys.path.append( os.path.join(os.getenv('APPDATA'), 'Anki2', 'addons21', 'neo-leaderboard'))
+
+from pocketbase_api import PB
 
 def log(msg):
     print(f"NAL: {msg}")
-
 
 log("="*20)
 log("Anki leaderboard addon loaded")
@@ -80,33 +84,48 @@ class LoginDialog(QWidget):
         layout.addWidget(self.lineEdit_password, 1, 1)
 
         button_login = QPushButton('Login')
-        qconnect(button_login.clicked, self.login_user)
+        qconnect(button_login.clicked, self.on_login_user)
         layout.addWidget(button_login, 2, 0, 1, 2)
         layout.setRowMinimumHeight(2, 75)
 
         self.setLayout(layout)
 
-    def login_user(self):
-        log("login_user")
-        
+    def on_login_user(self):        
         user = self.lineEdit_username.text()
         password = self.lineEdit_password.text()
         
-        msg = QMessageBox()
-        msg.setText(f"Login failed {user}/{password}")
+        op = QueryOp(
+            parent=mw,
+            op=login_user(user, password),
+            success=None,
+        )
+
+        # if with_progress() is not called, no progress window will be shown.
+        op.run_in_background()
         
-        pb = PocketBase("https://pb-anki-lb.fly.dev/")
+        #! TODO: remove string is not callable?
+        # i have no idea why its there
 
-        try:
-            user_data = pb.users.auth_via_email(user, password)
-        except:
-            user_data = None
 
-        if user_data:
-            msg.setText(f"{user_data}")
+def login_user(user, password) -> str:
+    pb = PB("https://pb-anki-lb.fly.dev/")
+
+    try:
+        user_data = pb.login(user, password)
+    except:
+        user_data = None
         
-        msg.exec_()
+    if user_data is None:
+        showInfo("Login failed")
+        return ""
+    
+    showInfo(user_data)
+    
+    return user_data
 
+def on_login_success() -> None:    
+    showInfo("login success")
+    
 
 def show_login_dialog():
     log("show_login_dialog")
@@ -118,7 +137,6 @@ def show_login_dialog():
 login_action = QAction("Login", mw)
 menu.addAction(login_action)
 qconnect(login_action.triggered, show_login_dialog)
-
 
 # and add the whole menu to the main menu
 mw.form.menubar.insertMenu(mw.form.menuTools.menuAction(), menu)
