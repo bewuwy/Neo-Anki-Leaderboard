@@ -4,10 +4,11 @@ from aqt.qt import *
 
 import datetime
 
-import sys
-# check if system is windows
-if sys.platform.startswith("win"):
-    sys.path.append( os.path.join(os.getenv('APPDATA'), 'Anki2', 'addons21', 'neo-leaderboard'))
+import sys, pathlib, os
+addon_path = pathlib.Path(__file__).parent.resolve()
+sys.path.append(str(addon_path))
+# if sys.platform.startswith("win"):
+#     sys.path.append( os.path.join(os.getenv('APPDATA'), 'Anki2', 'addons21', 'neo-leaderboard'))
 
 
 from anki_stats import get_review_count_today
@@ -18,12 +19,6 @@ from consts import POCKETBASE_URL, ADDON_FOLDER
 # dev
 def log(msg):
     print(f"NAL: {msg}")
-
-def log_review_count(show=False):
-    log(f"Review count today: {get_review_count_today()}")
-
-    if show:
-        showInfo(f"Review count today: {get_review_count_today()}")
     
 def on_load():
     # read user data from config
@@ -33,7 +28,7 @@ def on_load():
         user_data = config["user_data"]
         
         pb = PB(POCKETBASE_URL)
-        pb.user = User(user_data, pb)
+        pb.login_from_data(user_data)
         
         mw.NAL_PB = pb
         
@@ -44,6 +39,10 @@ def on_anki_sync():
         mw.NAL_PB.user.set_reviews(datetime.datetime.now(), r)
         
         # showInfo(f"Synced review count to NAL: {r}")
+        log(f"Synced review count to NAL: {r}")
+    except AttributeError:
+        # showInfo("You need to login first")
+        log("User not logged in and tried to sync")
     except Exception as e:
         showInfo(f"Error syncing review count to NAL: {e}")
         
@@ -57,20 +56,15 @@ log("="*20)
 log("Neo Anki leaderboard addon loaded")
 log("="*20)
 
+log(os.path.basename(addon_path))
+log(addon_path)
+
 # setup hooks
-gui_hooks.sync_did_finish.append(log_review_count)
 gui_hooks.sync_did_finish.append(on_anki_sync)
 gui_hooks.profile_did_open.append(on_load)
 
 # setup menu
 menu = QMenu("LeaderBoard", mw)
-
-# test action
-testAction = QAction("test", mw)
-def testFunction():
-    log_review_count(True)
-qconnect(testAction.triggered, testFunction)
-menu.addAction(testAction)
 
 # login action
 login_action = QAction("Login", mw)

@@ -1,14 +1,13 @@
 import requests
 
-
 class PB:
     def __init__(self, url):
         self.url = url
         self.user = None
 
-    def login(self, user_data, password):
+    def login(self, username, password):
         r = requests.post(self.url + "api/collections/users/auth-with-password", json={
-                "identity": user_data,
+                "identity": username,
                 "password": password
             })
             
@@ -20,6 +19,10 @@ class PB:
         # token = user["token"]
         user = User(user_data, self)
         
+        self.user = user
+        
+    def login_from_data(self, user_data):
+        user = User(user_data, self)
         self.user = user
 
 class User:
