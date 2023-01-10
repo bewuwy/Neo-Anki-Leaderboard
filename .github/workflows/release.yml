@@ -1,0 +1,24 @@
+name: Publish addon
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    name: Publish zip
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Zip
+      run: zip -r NAL.ankiaddon *
+    - name: Upload zip to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: NAL.ankiaddon
+        asset_name: NAL.ankiaddon
+        tag: ${{ github.ref }}
+        overwrite: true
