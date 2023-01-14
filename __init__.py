@@ -7,21 +7,27 @@ import datetime
 import sys, pathlib, os
 addon_path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(str(addon_path))
-# if sys.platform.startswith("win"):
-#     sys.path.append( os.path.join(os.getenv('APPDATA'), 'Anki2', 'addons21', 'neo-leaderboard'))
-
 
 from anki_stats import get_review_count_today
 from pocketbase_api import PB, User
 import login
 from consts import POCKETBASE_URL, ADDON_FOLDER
 
-# dev
+# ===========
+# dev functions
+# ===========
+
 def log(msg):
     print(f"NAL: {msg}")
+
+# ===========
+# HOOKS
+# ===========
     
 def on_load():
     # read user data from config
+    log("addon folder " + ADDON_FOLDER)
+    
     config = mw.addonManager.getConfig(ADDON_FOLDER)
     
     if config and "user_data" in config:        
