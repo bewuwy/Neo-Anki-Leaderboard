@@ -1,4 +1,5 @@
 import requests
+import datetime
 
 class PB:
     def __init__(self, url):
@@ -56,12 +57,19 @@ class User:
         else:
             return reviews[date_str]
             
-    def set_reviews(self, date, reviews_number):
-        r = requests.get(self.PB.url + f"api/collections/users/records/{self.id}/", headers=self._get_headers())
-            
-        data = r.json()        
-        curr_reviews = data["reviews"]
+    def set_reviews(self, date, reviews_number):        
+        r0 = requests.get(self.PB.url + f"api/collections/users/records/{self.id}/", headers=self._get_headers())
         
+        if r0.status_code != 200:
+            return False
+        
+        user_data_id = r0.json()["user_data"]
+        user_today_id = r0.json()["user_today"]
+                
+        r = requests.get(self.PB.url + f"api/collections/user_data/records/{user_data_id}/", headers=self._get_headers())
+        data = r.json()
+        
+        curr_reviews = data["reviews"]
         if not curr_reviews:
             curr_reviews = {}
             
@@ -69,8 +77,14 @@ class User:
         
         curr_reviews[date_str] = reviews_number
         
-        r = requests.patch(self.PB.url + f"api/collections/users/records/{self.id}", json={
+        r = requests.patch(self.PB.url + f"api/collections/user_data/records/{user_data_id}", json={
             "reviews": curr_reviews
         }, headers=self._get_headers())
         
-        return r.status_code == 200
+        if date.date() == datetime.datetime.now().date():            
+            # update the daily leaderboard
+            r2 = requests.patch(self.PB.url + f"api/collections/today_leaderboard/records/{user_today_id}", json={
+                "reviews": reviews_number
+            }, headers=self._get_headers())
+        
+        return r.status_code == 200 and r2.status_code == 200

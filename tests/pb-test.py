@@ -26,7 +26,6 @@ class TestPocketBase(unittest.TestCase):
 
         # print(test_user)
 
-
     def test_requests(self):
         import requests
         
@@ -56,8 +55,6 @@ class TestPocketBase(unittest.TestCase):
         pb.login("test@bewu.dev", "bewu1234")
         
         r = pb.user.get_reviews(datetime.datetime.now())
-        
-        
         
     def test_update_reviews(self):
         pb = PB(POCKETBASE_URL)
