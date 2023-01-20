@@ -11,7 +11,7 @@ sys.path.append(str(addon_path))
 from anki_stats import get_review_count_today
 from pocketbase_api import PB, User
 import login
-from consts import POCKETBASE_URL, ADDON_FOLDER
+from consts import POCKETBASE_URL, ADDON_FOLDER, LEADERBOARD_WEBSITE
 
 # ===========
 # dev functions
@@ -79,6 +79,14 @@ def show_login_dialog():
     mw.loginWidget.show()
 qconnect(login_action.triggered, show_login_dialog)
 menu.addAction(login_action)
+
+# open leaderboard action
+open_lb_action = QAction("Open Leaderboard", mw)
+def open_lb():
+    url = QUrl(LEADERBOARD_WEBSITE)
+    QDesktopServices.openUrl(url)
+qconnect(open_lb_action.triggered, open_lb)
+menu.addAction(open_lb_action)
 
 # add the whole addon menu to the main menu
 mw.form.menubar.insertMenu(mw.form.menuTools.menuAction(), menu)

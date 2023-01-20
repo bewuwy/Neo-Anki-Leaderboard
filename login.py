@@ -65,7 +65,7 @@ def login_user(user, password) -> None:
         showInfo("Login failed")
         return on_login_success
     
-    showInfo(user.token)
+    showInfo("Logged in successfully")
     
     mw.NAL_PB = pb
     
@@ -81,6 +81,9 @@ def login_user(user, password) -> None:
         "token": user.token
     }
     mw.addonManager.writeConfig(ADDON_FOLDER, config)
+    
+    # close self
+    mw.login_dialog.close()
     
     return on_login_success
 
