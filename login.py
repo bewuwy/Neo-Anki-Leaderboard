@@ -83,7 +83,7 @@ def login_user(user, password) -> None:
     mw.addonManager.writeConfig(ADDON_FOLDER, config)
     
     # close self
-    mw.login_dialog.close()
+    mw.loginWidget.close()
     
     return on_login_success
 
