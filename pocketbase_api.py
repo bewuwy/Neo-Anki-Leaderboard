@@ -1,5 +1,6 @@
 import requests
 import datetime
+from anki_stats import get_daily_reviews_since
 
 import consts
 
@@ -157,3 +158,8 @@ class User:
         #     "week": week_score,
         #     "month": month_score
         # }
+        
+    def full_sync(self):
+        reviews = get_daily_reviews_since(datetime.datetime(datetime.datetime.now().year, 1, 1))
+
+        self.set_multiple_reviews(reviews)

@@ -69,6 +69,9 @@ def login_user(user, password) -> None:
     
     mw.NAL_PB = pb
     
+    # perform full sync
+    mw.NAL_PB.user.full_sync()
+    
     # write user data to config
     config = mw.addonManager.getConfig(ADDON_FOLDER)
     if not config:

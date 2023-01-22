@@ -93,11 +93,9 @@ menu.addAction(open_lb_action)
 # full sync action
 full_sync_action = QAction("Full Sync", mw)
 def full_sync():
-    reviews = get_daily_reviews_since(datetime.datetime(2023, 1, 1))
-    log(reviews, True)
     
     try:
-        mw.NAL_PB.user.set_multiple_reviews(reviews)
+        mw.NAL_PB.user.full_sync()
     except AttributeError as e:
         log(f"User not logged in and tried to full-sync")
     except Exception as e:
