@@ -83,13 +83,9 @@ class User:
             "reviews": curr_reviews
         }, headers=self._get_headers())
         
-        if date.date() == datetime.datetime.now().date():            
-            # update the daily leaderboard
-            r2 = requests.patch(self.PB.url + f"api/collections/today_leaderboard/records/{user_today_id}", json={
-                "reviews": reviews_number
-            }, headers=self._get_headers())
+        update_lb = self.update_leaderboards(curr_reviews)
         
-        return r.status_code == 200 and r2.status_code == 200
+        return r.status_code == 200 and update_lb
 
     def set_multiple_reviews(self, reviews):
         r0 = requests.get(self.PB.url + f"api/collections/users/records/{self.id}/", headers=self._get_headers())
@@ -114,10 +110,50 @@ class User:
             "reviews": curr_reviews
         }, headers=self._get_headers())
         
-        # if date.date() == datetime.datetime.now().date():            
-        #     # update the daily leaderboard
-        #     r2 = requests.patch(self.PB.url + f"api/collections/today_leaderboard/records/{user_today_id}", json={
-        #         "reviews": reviews_number
-        #     }, headers=self._get_headers())
+        update_lb = self.update_leaderboards(curr_reviews)
         
-        return r.status_code == 200
+        return r.status_code == 200 and update_lb
+
+    def update_leaderboards(self, reviews):
+        r0 = requests.get(self.PB.url + f"api/collections/users/records/{self.id}/", headers=self._get_headers())
+        
+        if r0.status_code != 200:
+            return False
+        
+        # user_data_id = r0.json()["user_data"]
+        user_today = r0.json()["user_today"]
+        user_week = r0.json()["user_week"]
+        user_month = r0.json()["user_month"]
+        
+        day_score = reviews[consts.get_date_str(datetime.datetime.now())]
+        
+        r_day = requests.patch(self.PB.url + f"api/collections/today_leaderboard/records/{user_today}", json={
+            "reviews": day_score
+        }, headers=self._get_headers())
+        
+        week_score = 0
+        start_date = datetime.datetime.now() - datetime.timedelta(days=datetime.datetime.now().weekday())
+        while start_date.date() <= datetime.datetime.now().date():
+            week_score += reviews[consts.get_date_str(start_date)]
+            start_date += datetime.timedelta(days=1)
+            
+        r_week = requests.patch(self.PB.url + f"api/collections/week_leaderboard/records/{user_week}", json={
+            "reviews": week_score
+        }, headers=self._get_headers())
+        
+        month_score = 0
+        start_date = datetime.datetime.now() - datetime.timedelta(days=datetime.datetime.now().day - 1)
+        while start_date.date() <= datetime.datetime.now().date():
+            month_score += reviews[consts.get_date_str(start_date)]
+            start_date += datetime.timedelta(days=1)
+        
+        r_month = requests.patch(self.PB.url + f"api/collections/month_leaderboard/records/{user_month}", json={
+            "reviews": month_score
+        }, headers=self._get_headers())
+            
+        return r_day.status_code == 200 and r_week.status_code == 200 and r_month.status_code == 200 
+        # {
+        #     "day": day_score,
+        #     "week": week_score,
+        #     "month": month_score
+        # }
