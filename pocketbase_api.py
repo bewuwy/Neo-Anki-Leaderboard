@@ -1,7 +1,8 @@
 import requests
 import datetime
-from anki_stats import get_daily_reviews_since
+from aqt import mw
 
+from anki_stats import get_daily_reviews_since
 import consts
 
 class PB:
@@ -26,8 +27,20 @@ class PB:
         self.user = user
         
     def login_from_data(self, user_data):
-        user = User(user_data, self)
-        self.user = user
+        if user_data:
+            user = User(user_data, self)
+            self.user = user
+        else:
+            self.user = None
+        
+    def logout(self):
+        self.user = None
+        
+        # update config data
+        config = mw.addonManager.getConfig(consts.ADDON_FOLDER)
+        config['user_data'] = None
+        
+        mw.addonManager.writeConfig(consts.ADDON_FOLDER, config)
 
 class User:
     def __init__(self, user_data, PB):

@@ -6,6 +6,7 @@ from aqt.operations import QueryOp
 
 from pocketbase_api import PB
 from consts import POCKETBASE_URL, ADDON_FOLDER
+import menu
 
 
 class LoginDialog(QWidget):
@@ -87,6 +88,9 @@ def login_user(user, password) -> None:
     
     # close self
     mw.loginWidget.close()
+    
+    # update menu
+    menu.setup_menu()
     
     return on_login_success
 
