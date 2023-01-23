@@ -8,14 +8,14 @@ import sys, pathlib, os
 addon_path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(str(addon_path))
 
-from anki_stats import get_review_count_today, get_daily_reviews_since
-from pocketbase_api import PB, User
+import anki_stats
+from pocketbase_api import PB
 import login
 from consts import DEV_MODE, POCKETBASE_URL, ADDON_FOLDER, LEADERBOARD_WEBSITE
 
-# ===========
-# dev functions
-# ===========
+#* ===========
+#* dev functions
+#* ===========
 
 def log(msg, force_print=False):
     if DEV_MODE and not force_print:
@@ -23,9 +23,9 @@ def log(msg, force_print=False):
     
     print(f"NAL: {msg}")
 
-# ===========
-# HOOKS
-# ===========
+#* ===========
+#* HOOKS
+#* ===========
     
 def on_load():
     # read user data from config
@@ -42,7 +42,7 @@ def on_load():
         mw.NAL_PB = pb
         
 def on_anki_sync():
-    r = get_review_count_today()
+    r = anki_stats.get_review_count()
     
     try:
         mw.NAL_PB.user.set_reviews(datetime.datetime.now(), r)
@@ -57,9 +57,9 @@ def on_anki_sync():
         
         return
     
-# ===========
-# MAIN
-# ===========
+#* ===========
+#* MAIN
+#* ===========
 
 log("="*20, True)
 log("Neo Anki leaderboard addon loaded", True)
@@ -67,12 +67,14 @@ log("="*20, True)
 
 log(addon_path, True)
 
-# setup hooks
+#* HOOKS
+
 gui_hooks.sync_did_finish.append(on_anki_sync)
 gui_hooks.profile_did_open.append(on_load)
 
-# setup menu
-menu = QMenu("LeaderBoard", mw)
+#* MENU
+
+menu = QMenu("NeoLeaderBoard", mw)
 
 # login action
 login_action = QAction("Login", mw)
@@ -82,6 +84,14 @@ def show_login_dialog():
 qconnect(login_action.triggered, show_login_dialog)
 menu.addAction(login_action)
 
+# register action
+register_action = QAction("Register", mw)
+def open_register():
+    url = QUrl(LEADERBOARD_WEBSITE + 'register')
+    QDesktopServices.openUrl(url)
+qconnect(register_action.triggered, open_register)
+menu.addAction(register_action)
+
 # open leaderboard action
 open_lb_action = QAction("Open Leaderboard", mw)
 def open_lb():
@@ -89,6 +99,14 @@ def open_lb():
     QDesktopServices.openUrl(url)
 qconnect(open_lb_action.triggered, open_lb)
 menu.addAction(open_lb_action)
+
+# debug action
+if DEV_MODE:
+    debug_action = QAction("Debug", mw)
+    def on_debug_action():
+        log(anki_stats.get_time_spent())
+    qconnect(debug_action.triggered, on_debug_action)
+    menu.addAction(debug_action)
 
 # full sync action
 full_sync_action = QAction("Full Sync", mw)

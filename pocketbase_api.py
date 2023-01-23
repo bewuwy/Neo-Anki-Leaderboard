@@ -39,12 +39,12 @@ class User:
         return {
             "Authorization": f"{self.token}"
         }
-                
+    
     def change_name(self, new_name):
         r = requests.patch(self.PB.url + f"api/collections/users/records/{self.id}", json={
             "name": new_name
         }, headers=self._get_headers())
-                        
+        
         return r.status_code == 200
     
     def get_reviews(self, date):
@@ -67,19 +67,17 @@ class User:
             return False
         
         user_data_id = r0.json()["user_data"]
-        user_today_id = r0.json()["user_today"]
-                
+        
         r = requests.get(self.PB.url + f"api/collections/user_data/records/{user_data_id}/", headers=self._get_headers())
         data = r.json()
         
         curr_reviews = data["reviews"]
         if not curr_reviews:
             curr_reviews = {}
-            
+        
         date_str = consts.get_date_str(date)
-        
         curr_reviews[date_str] = reviews_number
-        
+                
         r = requests.patch(self.PB.url + f"api/collections/user_data/records/{user_data_id}", json={
             "reviews": curr_reviews
         }, headers=self._get_headers())
@@ -96,16 +94,16 @@ class User:
         
         user_data_id = r0.json()["user_data"]
         # user_today_id = r0.json()["user_today"]
-                
+        
         r = requests.get(self.PB.url + f"api/collections/user_data/records/{user_data_id}/", headers=self._get_headers())
         data = r.json()
         
         curr_reviews = data["reviews"]
         if not curr_reviews:
             curr_reviews = {}
-            
-        for r in reviews:
-            curr_reviews[r] = reviews[r]
+        
+        for rev_keys in reviews:
+            curr_reviews[rev_keys] = reviews[rev_keys]
         
         r = requests.patch(self.PB.url + f"api/collections/user_data/records/{user_data_id}", json={
             "reviews": curr_reviews
@@ -125,27 +123,34 @@ class User:
         user_today = r0.json()["user_today"]
         user_week = r0.json()["user_week"]
         user_month = r0.json()["user_month"]
-        
-        day_score = reviews[consts.get_date_str(datetime.datetime.now())]
+
+        # calculate day score
+        day_score = 0        
+        if consts.get_date_str(datetime.datetime.now()) in reviews:
+            day_score = reviews[consts.get_date_str(datetime.datetime.now())]
         
         r_day = requests.patch(self.PB.url + f"api/collections/today_leaderboard/records/{user_today}", json={
             "reviews": day_score
         }, headers=self._get_headers())
         
+        # calculate week score
         week_score = 0
         start_date = datetime.datetime.now() - datetime.timedelta(days=datetime.datetime.now().weekday())
         while start_date.date() <= datetime.datetime.now().date():
-            week_score += reviews[consts.get_date_str(start_date)]
+            if consts.get_date_str(start_date) in reviews:
+                week_score += reviews[consts.get_date_str(start_date)]
             start_date += datetime.timedelta(days=1)
-            
+        
         r_week = requests.patch(self.PB.url + f"api/collections/week_leaderboard/records/{user_week}", json={
             "reviews": week_score
         }, headers=self._get_headers())
         
+        # calculate month score
         month_score = 0
         start_date = datetime.datetime.now() - datetime.timedelta(days=datetime.datetime.now().day - 1)
         while start_date.date() <= datetime.datetime.now().date():
-            month_score += reviews[consts.get_date_str(start_date)]
+            if consts.get_date_str(start_date) in reviews:
+                month_score += reviews[consts.get_date_str(start_date)]
             start_date += datetime.timedelta(days=1)
         
         r_month = requests.patch(self.PB.url + f"api/collections/month_leaderboard/records/{user_month}", json={
@@ -162,4 +167,4 @@ class User:
     def full_sync(self):
         reviews = get_daily_reviews_since(datetime.datetime(datetime.datetime.now().year, 1, 1))
 
-        self.set_multiple_reviews(reviews)
+        return self.set_multiple_reviews(reviews)
