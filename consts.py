@@ -9,4 +9,4 @@ LEADERBOARD_WEBSITE = 'https://neoankilb.vercel.app/'
 def get_date_str(date):
     return date.strftime("%Y-%m-%d")
 
-DEV_MODE = False
+DEV_MODE = ADDON_FOLDER.endswith("dev")
