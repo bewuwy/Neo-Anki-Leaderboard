@@ -26,7 +26,7 @@ def setup_menu():
     # open leaderboard action
     open_lb_action = QAction("Open Leaderboard", mw)
     def open_lb():
-        url = QUrl(LEADERBOARD_WEBSITE)
+        url = QUrl(LEADERBOARD_WEBSITE + '?ref=anki')
         QDesktopServices.openUrl(url)
     qconnect(open_lb_action.triggered, open_lb)
     menu.addAction(open_lb_action)
@@ -43,7 +43,7 @@ def setup_menu():
         # register action
         register_action = QAction("Register", mw)
         def open_register():
-            url = QUrl(LEADERBOARD_WEBSITE + 'register')
+            url = QUrl(LEADERBOARD_WEBSITE + 'register?ref=anki')
             QDesktopServices.openUrl(url)
         qconnect(register_action.triggered, open_register)
         menu.addAction(register_action)
@@ -51,7 +51,7 @@ def setup_menu():
         # show user info action
         show_profile_action = QAction("Show Profile", mw)
         def show_profile():
-            url = QUrl(LEADERBOARD_WEBSITE + 'user/' + mw.NAL_PB.user.id)
+            url = QUrl(LEADERBOARD_WEBSITE + 'user/' + mw.NAL_PB.user.id + '?ref=anki')
             QDesktopServices.openUrl(url)
         qconnect(show_profile_action.triggered, show_profile)
         menu.addAction(show_profile_action)
