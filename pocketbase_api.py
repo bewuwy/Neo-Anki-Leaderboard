@@ -127,6 +127,8 @@ class User:
         return r.status_code == 200 and update_lb
 
     def update_leaderboards(self, reviews):
+        sucess = True
+        
         r0 = requests.get(self.PB.url + f"api/collections/users/records/{self.id}/", headers=self._get_headers())
         
         if r0.status_code != 200:
@@ -137,10 +139,8 @@ class User:
         dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         minutes = get_time_daily(dt)
         
-        # user_data_id = r0.json()["user_data"]
-        user_today = r0.json()["user_today"]
-        user_week = r0.json()["user_week"]
-        user_month = r0.json()["user_month"]
+        user_db = r0.json()
+        update_user_db = False
 
         # calculate day score
         day_rev_score = 0
@@ -148,11 +148,6 @@ class User:
         if consts.get_date_str(datetime.datetime.now()) in reviews:
             day_rev_score = reviews[consts.get_date_str(datetime.datetime.now())]
             day_min_score = minutes[consts.get_date_str(datetime.datetime.now())]
-        
-        r_day = requests.patch(self.PB.url + f"api/collections/today_leaderboard/records/{user_today}", json={
-            "reviews": day_rev_score,
-            "time": day_min_score
-        }, headers=self._get_headers())
         
         # calculate week score
         week_rev_score = 0
@@ -164,12 +159,7 @@ class User:
                 week_min_score += minutes[consts.get_date_str(start_date)]
 
             start_date += datetime.timedelta(days=1)
-        
-        r_week = requests.patch(self.PB.url + f"api/collections/week_leaderboard/records/{user_week}", json={
-            "reviews": week_rev_score,
-            "time": week_min_score
-        }, headers=self._get_headers())
-        
+            
         # calculate month score
         month_rev_score = 0
         month_min_score = 0
@@ -181,12 +171,37 @@ class User:
             
             start_date += datetime.timedelta(days=1)
         
-        r_month = requests.patch(self.PB.url + f"api/collections/month_leaderboard/records/{user_month}", json={
-            "reviews": month_rev_score,
-            "time": month_min_score
-        }, headers=self._get_headers())
+        for collection, score, time in \
+            zip(["today", "week", "month"], 
+                [day_rev_score, week_rev_score, month_rev_score], 
+                [day_min_score, week_min_score, month_min_score]):
+            
+            db_id = user_db.get(f'user_{collection}')
+            
+            if db_id:                
+                r = requests.patch(self.PB.url + f"api/collections/{collection}_leaderboard/records/{db_id}", json={
+                    "reviews": score,
+                    "time": time
+                }, headers=self._get_headers())
+            else:
+                r = requests.post(self.PB.url + f"api/collections/{collection}_leaderboard/records/", json={
+                    "user": self.id,
+                    "reviews": score,
+                    "time": time
+                }, headers=self._get_headers())
+                
+                user_db[f'user_{collection}'] = r.json()['id']
+                update_user_db = True
+                
+            if r.status_code != 200:
+                sucess = False
         
-        return r_day.status_code == 200 and r_week.status_code == 200 and r_month.status_code == 200
+        if update_user_db:
+            r = requests.patch(self.PB.url + f"api/collections/users/records/{self.id}", json=user_db, headers=self._get_headers())
+            if r.status_code != 200:
+                sucess = False
+        
+        return sucess
         
     def full_sync(self):
         reviews = get_daily_reviews_since(datetime.datetime(datetime.datetime.now().year, 1, 1))

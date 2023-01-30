@@ -15,7 +15,7 @@ class LoginDialog(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('LeaderBoard Login')
+        self.setWindowTitle('NeoLeaderBoard Login')
         self.resize(500, 120)
 
         layout = QGridLayout()
