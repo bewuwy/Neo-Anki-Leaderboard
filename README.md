@@ -18,3 +18,7 @@ Go to [AnkiWeb](https://ankiweb.net/shared/info/1894428367) and follow the instr
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## Website
+
+The repository with source code for the website is [here](https://github.com/bewuwy/Neo-Anki-Leaderboard).
