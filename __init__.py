@@ -1,9 +1,11 @@
 from aqt.qt import *
-from dev import log
 
+#* add addon folder to path
 import sys, pathlib
 addon_path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(str(addon_path))
+
+from dev import log
 
 #* ===========
 #* MAIN

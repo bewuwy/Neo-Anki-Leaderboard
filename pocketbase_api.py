@@ -46,6 +46,7 @@ class User:
     def __init__(self, user_data, PB):
         self.token = user_data["token"]
         self.id = user_data['record']["id"]
+        self.model = user_data['record']
         self.PB = PB
         
     def _get_headers(self):
@@ -60,26 +61,8 @@ class User:
         
         return r.status_code == 200
     
-    def get_reviews(self, date):
-        r = requests.get(self.PB.url + f"api/collections/users/records/{self.id}/", headers=self._get_headers())
-            
-        data = r.json()        
-        reviews = data["reviews"]
-        
-        date_str = date.strftime("%Y-%m-%d")
-        
-        if not reviews or date_str not in reviews:
-            return None
-        else:
-            return reviews[date_str]
-            
-    def set_reviews(self, date, reviews_number):   
-        r0 = requests.get(self.PB.url + f"api/collections/users/records/{self.id}/", headers=self._get_headers())
-        
-        if r0.status_code != 200:
-            return False
-        
-        user_data_id = r0.json()["user_data"]
+    def get_reviews(self):
+        user_data_id = self.model["user_data"]
         
         r = requests.get(self.PB.url + f"api/collections/user_data/records/{user_data_id}/", headers=self._get_headers())
         data = r.json()
@@ -87,59 +70,47 @@ class User:
         curr_reviews = data["reviews"]
         if not curr_reviews:
             curr_reviews = {}
+        
+        return curr_reviews
+    
+    def set_reviews(self, date, reviews_number):
+        success = True
+        curr_reviews = self.get_reviews()
         
         date_str = consts.get_date_str(date)
         curr_reviews[date_str] = reviews_number
-                
-        r = requests.patch(self.PB.url + f"api/collections/user_data/records/{user_data_id}", json={
+        
+        r = requests.patch(self.PB.url + f"api/collections/user_data/records/{self.model['user_data']}", json={
             "reviews": curr_reviews
         }, headers=self._get_headers())
+        success = success and r.status_code == 200
         
         update_lb = self.update_leaderboards(curr_reviews)
+        success = success and update_lb
         
-        return r.status_code == 200 and update_lb
+        return success
 
     def set_multiple_reviews(self, reviews):
-        r0 = requests.get(self.PB.url + f"api/collections/users/records/{self.id}/", headers=self._get_headers())
-        
-        if r0.status_code != 200:
-            return False
-        
-        user_data_id = r0.json()["user_data"]
-        # user_today_id = r0.json()["user_today"]
-        
-        r = requests.get(self.PB.url + f"api/collections/user_data/records/{user_data_id}/", headers=self._get_headers())
-        data = r.json()
-        
-        curr_reviews = data["reviews"]
-        if not curr_reviews:
-            curr_reviews = {}
+        curr_reviews = self.get_reviews()
         
         for rev_keys in reviews:
             curr_reviews[rev_keys] = reviews[rev_keys]
         
-        r = requests.patch(self.PB.url + f"api/collections/user_data/records/{user_data_id}", json={
+        r = requests.patch(self.PB.url + f"api/collections/user_data/records/{self.model['user_data']}", json={
             "reviews": curr_reviews
         }, headers=self._get_headers())
-        
         update_lb = self.update_leaderboards(curr_reviews)
         
         return r.status_code == 200 and update_lb
 
     def update_leaderboards(self, reviews):
-        sucess = True
-        
-        r0 = requests.get(self.PB.url + f"api/collections/users/records/{self.id}/", headers=self._get_headers())
-        
-        if r0.status_code != 200:
-            return False
+        success = True
         
         # get minutes since start of month
         dt = datetime.datetime.now()
         dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         minutes = get_time_daily(dt)
         
-        user_db = r0.json()
         update_user_db = False
 
         # calculate day score
@@ -176,7 +147,7 @@ class User:
                 [day_rev_score, week_rev_score, month_rev_score], 
                 [day_min_score, week_min_score, month_min_score]):
             
-            db_id = user_db.get(f'user_{collection}')
+            db_id = self.model.get(f'user_{collection}')
             
             if db_id:                
                 r = requests.patch(self.PB.url + f"api/collections/{collection}_leaderboard/records/{db_id}", json={
@@ -190,18 +161,18 @@ class User:
                     "time": time
                 }, headers=self._get_headers())
                 
-                user_db[f'user_{collection}'] = r.json()['id']
+                self.model[f'user_{collection}'] = r.json()['id']
                 update_user_db = True
                 
             if r.status_code != 200:
-                sucess = False
+                success = False
         
         if update_user_db:
-            r = requests.patch(self.PB.url + f"api/collections/users/records/{self.id}", json=user_db, headers=self._get_headers())
+            r = requests.patch(self.PB.url + f"api/collections/users/records/{self.id}", json=self.model, headers=self._get_headers())
             if r.status_code != 200:
-                sucess = False
+                success = False
         
-        return sucess
+        return success
         
     def full_sync(self):
         reviews = get_daily_reviews_since(datetime.datetime(datetime.datetime.now().year, 1, 1))
