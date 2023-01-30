@@ -51,7 +51,7 @@ def setup_menu():
         # show user info action
         show_profile_action = QAction("Show Profile", mw)
         def show_profile():
-            url = QUrl(LEADERBOARD_WEBSITE + 'profile')
+            url = QUrl(LEADERBOARD_WEBSITE + 'user/' + mw.NAL_PB.user.id)
             QDesktopServices.openUrl(url)
         qconnect(show_profile_action.triggered, show_profile)
         menu.addAction(show_profile_action)
