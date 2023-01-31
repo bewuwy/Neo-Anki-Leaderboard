@@ -74,13 +74,7 @@ def login_user(user, password) -> None:
     # perform full sync on login
     mw.NAL_PB.user.full_sync()
     
-    # write user data to config
-    config = mw.addonManager.getConfig(ADDON_FOLDER)
-    if not config:
-        config = {}
-    
-    config["user_data"] = user.model
-    mw.addonManager.writeConfig(ADDON_FOLDER, config)
+    mw.NAL_PB.save_user_login()
     
     # close self
     mw.loginWidget.close()

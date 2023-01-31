@@ -27,11 +27,36 @@ class PB:
         self.user = user
         
     def login_from_data(self, user_data):
-        if user_data:
-            user = User(user_data, self)
-            self.user = user
+        if user_data: 
+
+            # TODO: deprecate in 1.0
+            if "user_data" not in user_data['record']:
+                # get user record from pocketbase
+                r = requests.get(self.url + f"api/collections/users/records/{user_data['record']['id']}", headers={
+                    "Authorization": f"{user_data['token']}"
+                })
+                
+                user_data['record'] = r.json()
+                
+                user = User(user_data, self)
+                self.user = user
+                
+                self.save_user_login()
+
+            else:            
+                user = User(user_data, self)
+                self.user = user
         else:
             self.user = None
+            
+    def save_user_login(self):
+        # write user data to config
+        config = mw.addonManager.getConfig(consts.ADDON_FOLDER)
+        if not config:
+            config = {}
+        
+        config["user_data"] = self.user.model
+        mw.addonManager.writeConfig(consts.ADDON_FOLDER, config)
         
     def logout(self):
         self.user = None
