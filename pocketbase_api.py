@@ -55,7 +55,10 @@ class PB:
         if not config:
             config = {}
         
-        config["user_data"] = self.user.model
+        config["user_data"] = {
+            "record": self.user.model,
+            "token": self.user.token
+        }
         mw.addonManager.writeConfig(consts.ADDON_FOLDER, config)
         
     def logout(self):
