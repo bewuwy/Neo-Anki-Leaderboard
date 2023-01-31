@@ -80,6 +80,14 @@ def setup_menu():
         qconnect(full_sync_action.triggered, full_sync)
         menu.addAction(full_sync_action)
     
+    # bug report action
+    issue_action = QAction("Report a Bug", mw)
+    def on_issue_action():
+        url = QUrl("https://github.com/bewuwy/Neo-Anki-Leaderboard/issues/new")
+        QDesktopServices.openUrl(url)
+    qconnect(issue_action.triggered, on_issue_action)
+    menu.addAction(issue_action)
+    
     # debug action
     if DEV_MODE:
         debug_action = QAction("Debug", mw)
