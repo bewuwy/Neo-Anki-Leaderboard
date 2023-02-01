@@ -4,9 +4,9 @@ import datetime
 from menu import setup_menu
 import anki_stats
 from consts import *
-from pocketbase_api import PB
+from pocketbase_api import PB, UpdateLBError
 
-from dev import log
+from dev import info, error, log
 
 
 def on_load():
@@ -33,15 +33,18 @@ def on_anki_sync():
     try:
         mw.NAL_PB.user.set_reviews(datetime.datetime.now(), r)
         
-        # showInfo(f"Synced review count to NAL: {r}")
-        log(f"Synced review count to NAL: {r}", True)
+        info(f"Synced review count to NAL: {r}", True)
     except AttributeError:
-        # showInfo("You need to login first")
-        log("User not logged in and tried to sync")
+        info("User not logged in and tried to sync")
+    except UpdateLBError:
+        info("Couldn't update leaderboard. Try logging out and back in.")
     except Exception as e:
-        log(f"Error syncing review count to NAL: {e}")
+        info(f"Error syncing review count to NAL. See log for details")
+        error()
+    else:
+        log("Synced review count to NAL")
         
-        return
+    return
     
 def setup_hooks():
     gui_hooks.sync_did_finish.append(on_anki_sync)

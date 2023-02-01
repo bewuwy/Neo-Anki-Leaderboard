@@ -1,12 +1,12 @@
 from aqt import mw
 from aqt.qt import *
-from aqt.utils import showInfo
 from aqt.operations import QueryOp
 
 
 from pocketbase_api import PB
 from consts import POCKETBASE_URL, ADDON_FOLDER
 import menu
+from dev import popup
 
 
 class LoginDialog(QWidget):
@@ -63,10 +63,10 @@ def login_user(user, password) -> None:
         user = None
         
     if user is None:
-        showInfo("Login failed")
+        popup("Login failed")
         return on_login_success
     
-    showInfo("Logged in successfully")
+    popup("Logged in successfully")
     
     # save PB to main window
     mw.NAL_PB = pb
@@ -85,5 +85,4 @@ def login_user(user, password) -> None:
     return on_login_success
 
 def on_login_success(result) -> None:
-    # showInfo("Login success")
     pass

@@ -1,3 +1,7 @@
+VERSION = "0.4.5"
+APP_NAME = "NeoLeaderBoard"
+SHORT_APP_NAME = "NeoLB"
+
 import pathlib, os
 
 POCKETBASE_URL = 'https://pb-anki-lb.fly.dev/'

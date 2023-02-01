@@ -1,12 +1,11 @@
 from aqt import mw
 from aqt.qt import *
-from aqt.utils import showInfo
 
 from consts import *
-import login
+import login, about
 
 import anki_stats
-from dev import log
+from dev import info, error, popup
 
 def setup_menu():
     menu = None
@@ -71,11 +70,14 @@ def setup_menu():
             try:
                 mw.NAL_PB.user.full_sync()
             except AttributeError as e:
-                log(f"User not logged in and tried to full-sync")
+                info(f"User not logged in and tried to full-sync")
+            except UpdateLBError:
+                info("Couldn't update leaderboard. Try logging out and back in.")
             except Exception as e:
-                log(f"Error full-syncing review count to NAL: {e}")
+                info(f"Error full-syncing review count to NAL. See log for details.")
+                error()
             else:
-                showInfo("Full sync complete")
+                popup("Full sync complete")
 
         qconnect(full_sync_action.triggered, full_sync)
         menu.addAction(full_sync_action)
@@ -88,11 +90,19 @@ def setup_menu():
     qconnect(issue_action.triggered, on_issue_action)
     menu.addAction(issue_action)
     
+    # about action
+    about_action = QAction("About", mw)
+    def on_about_action():
+        mw.aboutWidget = about.AboutWindow()
+        mw.aboutWidget.show()
+    qconnect(about_action.triggered, on_about_action)
+    menu.addAction(about_action)
+    
     # debug action
     if DEV_MODE:
         debug_action = QAction("Debug", mw)
         def on_debug_action():
-            log(anki_stats.get_time_spent())
+            info(anki_stats.get_time_spent())
         qconnect(debug_action.triggered, on_debug_action)
         menu.addAction(debug_action)
 

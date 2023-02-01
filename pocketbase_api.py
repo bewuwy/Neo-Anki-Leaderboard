@@ -5,6 +5,11 @@ from aqt import mw
 from anki_stats import get_daily_reviews_since, get_time_daily
 import consts
 
+from dev import log, info
+
+class UpdateLBError(Exception):
+    pass
+
 class PB:
     def __init__(self, url):
         self.url = url
@@ -21,10 +26,10 @@ class PB:
         if user_data is None or "token" not in user_data:
             return None
         
-        # token = user["token"]
         user = User(user_data, self)
-        
         self.user = user
+        
+        log(f"Logged in user {self.user.id}")
         
     def login_from_data(self, user_data):
         if user_data: 
@@ -46,8 +51,12 @@ class PB:
             else:            
                 user = User(user_data, self)
                 self.user = user
+                
+            log(f"Logged in user {self.user.id} from data")
         else:
             self.user = None
+            
+            log("No user data found")
             
     def save_user_login(self):
         # write user data to config
@@ -61,6 +70,8 @@ class PB:
         }
         mw.addonManager.writeConfig(consts.ADDON_FOLDER, config)
         
+        log(f"Saved user data {self.user.id} to config")
+        
     def logout(self):
         self.user = None
         
@@ -69,6 +80,8 @@ class PB:
         config['user_data'] = None
         
         mw.addonManager.writeConfig(consts.ADDON_FOLDER, config)
+        
+        log("Logged out user")
 
 class User:
     def __init__(self, user_data, PB):
@@ -102,7 +115,6 @@ class User:
         return curr_reviews
     
     def set_reviews(self, date, reviews_number):
-        success = True
         curr_reviews = self.get_reviews()
         
         date_str = consts.get_date_str(date)
@@ -110,13 +122,14 @@ class User:
         
         r = requests.patch(self.PB.url + f"api/collections/user_data/records/{self.model['user_data']}", json={
             "reviews": curr_reviews
-        }, headers=self._get_headers())
-        success = success and r.status_code == 200
-        
+        }, headers=self._get_headers())        
         update_lb = self.update_leaderboards(curr_reviews)
-        success = success and update_lb
         
-        return success
+        if r.status_code != 200:
+            log('set reviews failed')
+            log(r.json())
+        
+        return r.status_code == 200 and update_lb
 
     def set_multiple_reviews(self, reviews):
         curr_reviews = self.get_reviews()
@@ -129,14 +142,20 @@ class User:
         }, headers=self._get_headers())
         update_lb = self.update_leaderboards(curr_reviews)
         
+        if r.status_code != 200:
+            log('set multiple reviews failed')
+            log(r.json())
+        
         return r.status_code == 200 and update_lb
 
     def update_leaderboards(self, reviews):
         success = True
         
-        # get minutes since start of month
+        # get minutes since start of month minus a week, because sometimes week is earlier than month
         dt = datetime.datetime.now()
         dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        dt -= datetime.timedelta(days=7)
+        
         minutes = get_time_daily(dt)
         
         update_user_db = False
@@ -194,15 +213,27 @@ class User:
                 
             if r.status_code != 200:
                 success = False
+                
+                log(f'update {collection} leaderboard failed')
+                log(r.url)
+                log(r.json())
+                
+                raise UpdateLBError(f'update {collection} leaderboard failed')
         
         if update_user_db:
             r = requests.patch(self.PB.url + f"api/collections/users/records/{self.id}", json=self.model, headers=self._get_headers())
+            log(f'updated user db')
+            
             if r.status_code != 200:
                 success = False
+                log('update user db failed')
+                log(r.json())
         
         return success
         
     def full_sync(self):
         reviews = get_daily_reviews_since(datetime.datetime(datetime.datetime.now().year, 1, 1))
+        
+        log(f'full sync')
 
         return self.set_multiple_reviews(reviews)
