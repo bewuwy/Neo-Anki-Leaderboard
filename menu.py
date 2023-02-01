@@ -85,7 +85,15 @@ def setup_menu():
     # bug report action
     issue_action = QAction("Report a Bug", mw)
     def on_issue_action():
-        url = QUrl("https://github.com/bewuwy/Neo-Anki-Leaderboard/issues/new")
+        log_short = []
+        for line in mw.NAL_LOG:
+            # remove up to first ": "
+            line = line[line.find(": ")+2:]
+
+            log_short.append(line)
+        
+        issue_body = f"Describe your issue:\n\nDebug log:\n```\n{'%0A'.join(log_short)}\n```"
+        url = QUrl(f"https://github.com/bewuwy/Neo-Anki-Leaderboard/issues/new?labels=bug&body={issue_body}")
         QDesktopServices.openUrl(url)
     qconnect(issue_action.triggered, on_issue_action)
     menu.addAction(issue_action)

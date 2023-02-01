@@ -15,11 +15,11 @@ from consts import *
 
 mw.NAL_LOG = []
 
-log("="*20)
 log(f"{APP_NAME} addon loaded")
-log("="*20)
-
-log("addon folder: " + ADDON_FOLDER)
+log(f"version: {VERSION}")
+if DEV_MODE:
+    log("debug mode")
+log("folder: " + ADDON_FOLDER)
 
 #* hooks
 from hooks import setup_hooks
