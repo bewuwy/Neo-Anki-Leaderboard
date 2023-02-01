@@ -6,7 +6,7 @@ import sys, pathlib
 addon_path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(str(addon_path))
 
-from dev import info
+from dev import log
 from consts import *
 
 #* ===========
@@ -15,11 +15,11 @@ from consts import *
 
 mw.NAL_LOG = []
 
-info("="*20, True)
-info(f"{APP_NAME} addon loaded", True)
-info("="*20, True)
+log("="*20)
+log(f"{APP_NAME} addon loaded")
+log("="*20)
 
-info(ADDON_FOLDER, True)
+log("addon folder: " + ADDON_FOLDER)
 
 #* hooks
 from hooks import setup_hooks
