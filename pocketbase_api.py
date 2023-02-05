@@ -152,7 +152,7 @@ class User:
         success = True
         
         # get minutes since start of month minus a week, because sometimes week is earlier than month
-        dt = datetime.datetime.now()
+        dt = datetime.datetime.utcnow()
         dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         dt -= datetime.timedelta(days=7)
         
@@ -163,15 +163,16 @@ class User:
         # calculate day score
         day_rev_score = 0
         day_min_score = 0
-        if consts.get_date_str(datetime.datetime.now()) in reviews:
-            day_rev_score = reviews[consts.get_date_str(datetime.datetime.now())]
-            day_min_score = minutes[consts.get_date_str(datetime.datetime.now())]
+        if consts.get_date_str(datetime.datetime.utcnow()) in reviews:
+            day_rev_score = reviews[consts.get_date_str(datetime.datetime.utcnow())]
+            day_min_score = minutes[consts.get_date_str(datetime.datetime.utcnow())]
         
         # calculate week score
         week_rev_score = 0
         week_min_score = 0
-        start_date = datetime.datetime.now() - datetime.timedelta(days=datetime.datetime.now().weekday())
-        while start_date.date() <= datetime.datetime.now().date():
+        start_date = datetime.datetime.utcnow() - datetime.timedelta(days=datetime.datetime.utcnow().weekday())
+        log(f"counting week score from {start_date}")
+        while start_date.date() <= datetime.datetime.utcnow().date():
             if consts.get_date_str(start_date) in reviews:
                 week_rev_score += reviews[consts.get_date_str(start_date)]
                 week_min_score += minutes[consts.get_date_str(start_date)]
@@ -181,8 +182,9 @@ class User:
         # calculate month score
         month_rev_score = 0
         month_min_score = 0
-        start_date = datetime.datetime.now() - datetime.timedelta(days=datetime.datetime.now().day - 1)
-        while start_date.date() <= datetime.datetime.now().date():
+        start_date = datetime.datetime.utcnow() - datetime.timedelta(days=datetime.datetime.utcnow().day - 1)
+        log(f"counting month score from {start_date}")
+        while start_date.date() <= datetime.datetime.utcnow().date():
             if consts.get_date_str(start_date) in reviews:
                 month_rev_score += reviews[consts.get_date_str(start_date)]
                 month_min_score += minutes[consts.get_date_str(start_date)]
@@ -219,6 +221,8 @@ class User:
                 log(r.json())
                 
                 raise UpdateLBError(f'update {collection} leaderboard failed')
+            
+            log(f'updated {collection} leaderboard with {score} reviews and {time} minutes')
         
         if update_user_db:
             r = requests.patch(self.PB.url + f"api/collections/users/records/{self.id}", json=self.model, headers=self._get_headers())
@@ -232,7 +236,7 @@ class User:
         return success
         
     def full_sync(self):
-        reviews = get_daily_reviews_since(datetime.datetime(datetime.datetime.now().year, 1, 1))
+        reviews = get_daily_reviews_since(datetime.datetime(datetime.datetime.utcnow().year, 1, 1))
         
         log(f'full sync')
 

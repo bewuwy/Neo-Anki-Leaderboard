@@ -54,14 +54,14 @@ class TestPocketBase(unittest.TestCase):
         
         pb.login("test@bewu.dev", "bewu1234")
         
-        r = pb.user.get_reviews(datetime.datetime.now())
+        r = pb.user.get_reviews(datetime.datetime.utcnow())
         
     def test_update_reviews(self):
         pb = PB(POCKETBASE_URL)
         
         pb.login("test@bewu.dev", "bewu1234")
         
-        r = pb.user.set_reviews(datetime.datetime.now(), 69)
+        r = pb.user.set_reviews(datetime.datetime.utcnow(), 69)
         
         self.assertTrue(r)
 

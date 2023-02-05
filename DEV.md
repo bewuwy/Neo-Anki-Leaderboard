@@ -14,3 +14,7 @@ xcopy /y * %AppData%\Anki2\addons21\nal-dev
 ```
 
 ### Linux
+
+```bash
+clear & cp * /home/[user]/.local/share/Anki2/addons21/1894428367dev & anki | grep ^NAL
+```

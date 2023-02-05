@@ -31,7 +31,7 @@ def on_anki_sync():
     r = anki_stats.get_review_count()
     
     try:
-        mw.NAL_PB.user.set_reviews(datetime.datetime.now(), r)
+        mw.NAL_PB.user.set_reviews(datetime.datetime.utcnow(), r)
         
         log(f"Syncing review count to NAL: {r}")
     except AttributeError:

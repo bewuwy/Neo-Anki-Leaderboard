@@ -6,7 +6,7 @@ import traceback
 from consts import *
 
 def log(msg):
-    mw.NAL_LOG.append(f'{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}: {msg}')
+    mw.NAL_LOG.append(f'{datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")}: {msg}')
     
     print(f"NAL: {msg}")
 
