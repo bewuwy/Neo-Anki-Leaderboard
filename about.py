@@ -20,7 +20,7 @@ class AboutWindow(QWidget):
         layout.addWidget(label_title, 0, 0, 1, 2)
         
         # version
-        label_version = QLabel(f'<font size="4"> Version: {VERSION} </font>')
+        label_version = QLabel(f'<font size="4"> Version: {VERSION} { "(unstable)" if VERSION_UNSTABLE else "" } </font>')
         layout.addWidget(label_version, 1, 0, 1, 2)
         
         # made by
