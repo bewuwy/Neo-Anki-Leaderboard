@@ -20,6 +20,7 @@ def on_load():
         
         pb = PB(POCKETBASE_URL)
         pb.login_from_data(user_data)
+        pb.refresh_user_token()
         
         mw.NAL_PB = pb
     else:

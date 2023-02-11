@@ -58,6 +58,19 @@ class PB:
             
             log("No user data found")
             
+    def refresh_user_token(self):
+        r = requests.post(self.url + f"api/collections/users/auth-refresh", headers=self.user._get_headers())
+        
+        if r.status_code != 200:
+            log("Failed to refresh user token")
+            log(r.json())
+            return
+        else:
+            self.user = User(r.json(), self)
+            self.save_user_login()
+            
+            log(f"Refreshed user token {self.user.id} from data")
+        
     def save_user_login(self):
         # write user data to config
         config = mw.addonManager.getConfig(consts.ADDON_FOLDER)
