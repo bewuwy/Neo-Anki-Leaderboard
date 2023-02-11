@@ -69,7 +69,7 @@ class PB:
             self.user = User(r.json(), self)
             self.save_user_login()
             
-            log(f"Refreshed user token {self.user.id} from data")
+            log(f"Refreshed user token {self.user.id}")
         
     def save_user_login(self):
         # write user data to config

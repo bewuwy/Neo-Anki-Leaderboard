@@ -1,12 +1,12 @@
-from aqt import mw, gui_hooks
+from aqt import mw, gui_hooks #, QThread
 import datetime
 
-from menu import setup_menu
+from dev import log, info, error, popup
 import anki_stats
+from menu import setup_menu
 from consts import *
 from pocketbase_api import PB, UpdateLBError
-
-from dev import info, error, log, popup
+from qt_workers import TokenRefresher #, LBSyncer
 
 
 def on_load():
@@ -20,7 +20,9 @@ def on_load():
         
         pb = PB(POCKETBASE_URL)
         pb.login_from_data(user_data)
-        pb.refresh_user_token()
+        
+        mw.nal_token_refresher = TokenRefresher(pb)
+        mw.nal_token_refresher.start()
         
         mw.NAL_PB = pb
     else:
@@ -29,8 +31,20 @@ def on_load():
     setup_menu()
 
 def on_anki_sync():
-    r = anki_stats.get_review_count()
+    # mw.lb_sync_thread = QThread()
+    # syncer = LBSyncer(mw.NAL_PB)
+    # syncer.moveToThread(mw.lb_sync_thread)
+    # mw.lb_sync_thread.started.connect(syncer.run)
+    # syncer.finished.connect(mw.lb_sync_thread.quit)
+    # syncer.finished.connect(syncer.deleteLater)
+    # mw.lb_sync_thread.finished.connect(mw.lb_sync_thread.deleteLater)
     
+    # mw.lb_sync_thread.start()
+    # # delete thread after it's finished
+    # # mw.lb_sync_thread.finished.connect(lambda: delattr(mw, "lb_sync_thread"))
+    
+    r = anki_stats.get_review_count()
+            
     try:
         mw.NAL_PB.user.set_reviews(datetime.datetime.utcnow(), r)
         
@@ -41,9 +55,7 @@ def on_anki_sync():
         popup("Couldn't update leaderboard. Try logging out and back in.")
     except Exception as e:
         info(f"Error syncing review count to NAL. See log for details")
-        error()
-        
-    return
+        error()    
     
 def setup_hooks():
     gui_hooks.sync_did_finish.append(on_anki_sync)
