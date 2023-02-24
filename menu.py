@@ -25,7 +25,7 @@ def setup_menu():
     # open leaderboard action
     open_lb_action = QAction("Open Leaderboard", mw)
     def open_lb():
-        url = QUrl(LEADERBOARD_WEBSITE + '?ref=anki')
+        url = QUrl(LEADERBOARD_WEBSITE + 'board/week?ref=anki')
         QDesktopServices.openUrl(url)
     qconnect(open_lb_action.triggered, open_lb)
     menu.addAction(open_lb_action)
@@ -93,7 +93,7 @@ def setup_menu():
             log_short.append(line)
         
         issue_body = f"Describe your issue:\n\nDebug log:\n```\n{'%0A'.join(log_short)}\n```"
-        url = QUrl(f"https://github.com/bewuwy/Neo-Anki-Leaderboard/issues/new?labels=bug&body={issue_body}")
+        url = QUrl(GITHUB_URL + f"issues/new?labels=bug&body={issue_body}")
         QDesktopServices.openUrl(url)
     qconnect(issue_action.triggered, on_issue_action)
     menu.addAction(issue_action)
