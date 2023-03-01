@@ -161,6 +161,19 @@ class User:
         
         return r.status_code == 200 and update_lb
 
+    def get_medals(self):
+        user_id = self.model["id"]
+        
+        r_filter = f"owner=\"{user_id}\""
+        r = requests.get(self.PB.url + f"api/collections/medals/records/?filter={r_filter}", headers=self._get_headers())
+
+        if r.status_code != 200:
+            log('get medals failed')
+            log(r.json())
+            return []
+        
+        return r.json()['items']
+
     def update_leaderboards(self, reviews):
         success = True
         

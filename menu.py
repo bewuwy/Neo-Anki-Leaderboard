@@ -110,7 +110,15 @@ def setup_menu():
     if DEV_MODE:
         debug_action = QAction("Debug", mw)
         def on_debug_action():
-            info(anki_stats.get_time_spent())
+            # info(anki_stats.get_time_spent())
+            
+            # clear medals in config
+            config = mw.addonManager.getConfig(ADDON_FOLDER)
+            config['medals'] = []
+            mw.addonManager.writeConfig(ADDON_FOLDER, config)
+            
+            info(mw.NAL_PB.user.get_medals())
+        
         qconnect(debug_action.triggered, on_debug_action)
         menu.addAction(debug_action)
 

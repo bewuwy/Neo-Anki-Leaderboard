@@ -29,6 +29,29 @@ def on_load():
         mw.NAL_PB = None
     
     setup_menu()
+    
+    if mw.NAL_PB:
+        # check for new medals
+        medals_new = mw.NAL_PB.user.get_medals()
+        medals_old = mw.addonManager.getConfig(ADDON_FOLDER).get("medals", [])
+        
+        if medals_new != medals_old:
+            delta_medals = [m for m in medals_new if m not in medals_old]
+
+            msg = "You've earned a new medal!"
+            if len(delta_medals) > 1:
+                msg = "You've earned new medals!"
+            
+            for m in delta_medals:
+                msg += f"\n{m['place'].capitalize()} in {m['date']} for {m['type']}"
+            
+            msg += "\n\nCheck it out on the website!"
+            
+            info(msg)
+            
+            config = mw.addonManager.getConfig(ADDON_FOLDER)
+            config["medals"] = medals_new
+            mw.addonManager.writeConfig(ADDON_FOLDER, config)
 
 def on_anki_sync():
     # mw.lb_sync_thread = QThread()
