@@ -47,7 +47,7 @@ def on_load():
             
             msg += "\n\nCheck it out on the website!"
             
-            info(msg)
+            popup(msg)
             
             config = mw.addonManager.getConfig(ADDON_FOLDER)
             config["medals"] = medals_new
