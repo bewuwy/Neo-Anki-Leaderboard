@@ -15,7 +15,7 @@ def on_load():
     
     config = mw.addonManager.getConfig(ADDON_FOLDER)
     
-    if config and "user_data" in config:        
+    if config and "user_data" in config and config["user_data"]:        
         user_data = config["user_data"]
         
         pb = PB(POCKETBASE_URL)
@@ -73,7 +73,7 @@ def on_anki_sync():
         
         log(f"Syncing review count to NAL: {r}")
     except AttributeError:
-        info("User not logged in and tried to sync")
+        log("User not logged in and tried to sync")
     except UpdateLBError:
         popup("Couldn't update leaderboard. Try logging out and back in.")
     except Exception as e:

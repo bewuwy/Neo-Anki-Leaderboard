@@ -103,6 +103,34 @@ class User:
         self.model = user_data['record']
         self.PB = PB
         
+        # TODO: deprecate in 1.0 after pb rework
+        #! check if user has user_data record
+        if self.model['user_data'] == "":
+            log("User has no user_data record")
+            
+            r = requests.post(self.PB.url + "api/collections/user_data/records", json={
+                "user": self.id
+            }, headers=self._get_headers())
+            
+            if r.status_code != 200:
+                log("Failed to create user_data record")
+                log(r.json())
+                self = None
+                return
+            
+            user_data_id = r.json()['id']
+            self.model['user_data'] = user_data_id
+            
+            r = requests.patch(self.PB.url + f"api/collections/users/records/{self.id}", json=self.model, headers=self._get_headers())
+            
+            if r.status_code != 200:
+                log("Failed to update user record with user_data id")
+                log(r.json())
+                self = None
+                return
+            
+            log("Created user_data record")
+        
     def _get_headers(self):
         return {
             "Authorization": f"{self.token}"
