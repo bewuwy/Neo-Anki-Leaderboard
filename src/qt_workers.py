@@ -1,4 +1,4 @@
-from aqt import QThread # , QObject, pyqtSignal
+from aqt import QThread, pyqtSignal # , QObject, 
 # import datetime
 
 # from pocketbase_api import UpdateLBError
@@ -7,12 +7,15 @@ from aqt import QThread # , QObject, pyqtSignal
 
 
 class TokenRefresher(QThread):
+    success = pyqtSignal(bool)
+    
     def __init__(self, pb):
         super().__init__()
         self.pb = pb
 
     def run(self):
-        self.pb.refresh_user_token()
+        s = self.pb.refresh_user_token()
+        self.success.emit(s)
 
 
 # class LBSyncer(QObject):

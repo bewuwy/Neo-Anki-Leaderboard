@@ -5,7 +5,7 @@ from aqt import mw
 from anki_stats import get_daily_reviews_since, get_time_daily
 import consts
 
-from dev import log, info
+from dev import *
 
 class UpdateLBError(Exception):
     pass
@@ -59,17 +59,24 @@ class PB:
             log("No user data found")
             
     def refresh_user_token(self):
+        """Refreshes pocketbase user token
+
+        Returns:
+            bool: success
+        """
+        
         r = requests.post(self.url + f"api/collections/users/auth-refresh", headers=self.user._get_headers())
         
         if r.status_code != 200:
             log("Failed to refresh user token")
             log(r.json())
-            return
-        else:
-            self.user = User(r.json(), self)
-            self.save_user_login()
-            
-            log(f"Refreshed user token {self.user.id}")
+            return False
+        
+        self.user = User(r.json(), self)
+        self.save_user_login()
+        
+        log(f"Refreshed user token {self.user.id}")
+        return True
         
     def save_user_login(self):
         # write user data to config
@@ -91,10 +98,13 @@ class PB:
         # update config data
         config = mw.addonManager.getConfig(consts.ADDON_FOLDER)
         config['user_data'] = None
+        config['medals'] = []
         
         mw.addonManager.writeConfig(consts.ADDON_FOLDER, config)
         
         log("Logged out user")
+        
+        self = None
 
 class User:
     def __init__(self, user_data, PB):

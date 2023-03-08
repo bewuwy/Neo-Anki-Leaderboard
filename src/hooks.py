@@ -23,6 +23,7 @@ def on_load():
         
         mw.nal_token_refresher = TokenRefresher(pb)
         mw.nal_token_refresher.start()
+        mw.nal_token_refresher.success.connect(on_token_refreshed)
         
         mw.NAL_PB = pb
     else:
@@ -79,7 +80,16 @@ def on_anki_sync():
     except Exception as e:
         info(f"Error syncing review count to NAL. See log for details")
         error()    
-    
+
+def on_token_refreshed(success):
+    if not success:
+        popup("User token refresh failed. \nTry logging in again.")
+        
+        mw.NAL_PB.logout()
+        
+        # reset menu
+        setup_menu()
+
 def setup_hooks():
     gui_hooks.sync_did_finish.append(on_anki_sync)
     gui_hooks.profile_did_open.append(on_load)
