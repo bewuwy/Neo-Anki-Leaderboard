@@ -68,7 +68,7 @@ def on_anki_sync():
     # # mw.lb_sync_thread.finished.connect(lambda: delattr(mw, "lb_sync_thread"))
     
     r = anki_stats.get_review_count()
-            
+    
     try:
         mw.NAL_PB.user.set_reviews(datetime.datetime.utcnow(), r)
         

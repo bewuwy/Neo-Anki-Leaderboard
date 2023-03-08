@@ -5,6 +5,7 @@ from consts import *
 import login, about
 
 import anki_stats
+import xp_system
 from dev import info, error, popup
 
 def setup_menu():
@@ -110,14 +111,11 @@ def setup_menu():
     if DEV_MODE:
         debug_action = QAction("Debug", mw)
         def on_debug_action():
-            # info(anki_stats.get_time_spent())
+            today_reviews, today_retention = anki_stats.get_review_count_retention()
             
-            # clear medals in config
-            config = mw.addonManager.getConfig(ADDON_FOLDER)
-            config['medals'] = []
-            mw.addonManager.writeConfig(ADDON_FOLDER, config)
+            xp = xp_system.calc_xp(today_reviews, today_retention)
             
-            info(mw.NAL_PB.user.get_medals())
+            popup(f"Today's reviews: {today_reviews}\nToday's retention: {today_retention}\nXP: {xp}")
         
         qconnect(debug_action.triggered, on_debug_action)
         menu.addAction(debug_action)

@@ -2,6 +2,7 @@ import requests
 import datetime
 from aqt import mw
 
+import anki_stats
 from anki_stats import get_daily_reviews_since, get_time_daily
 import consts
 
@@ -165,7 +166,18 @@ class User:
         
         return curr_reviews
     
-    def set_reviews(self, date, reviews_number):
+    def set_reviews(self, date: datetime.datetime, reviews_number: int):
+        """Set users reviews for a specific date in pocketbase, then update user's leaderboards
+
+        Args:
+            date (datetime): date to update
+            reviews_number (int): number of reviews
+
+        Returns:
+            bool: success
+        """
+        
+        # TODO: set reviews since last sync
         curr_reviews = self.get_reviews()
         
         date_str = consts.get_date_str(date)
@@ -174,7 +186,7 @@ class User:
         r = requests.patch(self.PB.url + f"api/collections/user_data/records/{self.model['user_data']}", json={
             "reviews": curr_reviews
         }, headers=self._get_headers())        
-        update_lb = self.update_leaderboards(curr_reviews)
+        update_lb = self.update_leaderboards()
         
         if r.status_code != 200:
             log('set reviews failed')
@@ -212,67 +224,80 @@ class User:
         
         return r.json()['items']
 
-    def update_leaderboards(self, reviews):
+    def update_leaderboards(self):
+        """Update user's leaderboards on pocketbase
+
+        Raises:
+            UpdateLBError: if update failed
+
+        Returns:
+            bool: success
+        """
+        
         success = True
         
-        # get minutes since start of month minus a week, because sometimes week is earlier than month
-        dt = datetime.datetime.utcnow()
-        dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        dt -= datetime.timedelta(days=7)
+        # get stats since start of month minus a week, because sometimes week is earlier than month
+        dt_start = datetime.datetime.utcnow()
+        dt_start = dt_start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        dt_start -= datetime.timedelta(days=7)
         
-        minutes = get_time_daily(dt)
+        stats = anki_stats.get_stats_daily_since(dt_start)
         
         update_user_db = False
 
         # calculate day score
-        day_rev_score = 0
-        day_min_score = 0
-        if consts.get_date_str(datetime.datetime.utcnow()) in reviews:
-            day_rev_score = reviews[consts.get_date_str(datetime.datetime.utcnow())]
-            day_min_score = minutes[consts.get_date_str(datetime.datetime.utcnow())]
+        day_score = {}
+        if consts.get_date_str(datetime.datetime.utcnow()) in stats:
+            day_score = stats[consts.get_date_str(datetime.datetime.utcnow())]
         
         # calculate week score
-        week_rev_score = 0
-        week_min_score = 0
         start_date = datetime.datetime.utcnow() - datetime.timedelta(days=datetime.datetime.utcnow().weekday())
         log(f"counting week score from {start_date}")
+        week_score = {
+            "reviews": 0,
+            "minutes": 0,
+            "xp": 0,
+        }
         while start_date.date() <= datetime.datetime.utcnow().date():
-            if consts.get_date_str(start_date) in reviews:
-                week_rev_score += reviews[consts.get_date_str(start_date)]
-                week_min_score += minutes[consts.get_date_str(start_date)]
+            if consts.get_date_str(start_date) in stats:
+                week_score["reviews"] += stats[consts.get_date_str(start_date)]["reviews"]
+                week_score["minutes"] += stats[consts.get_date_str(start_date)]["minutes"]
+                week_score["xp"] += stats[consts.get_date_str(start_date)]["xp"]
 
             start_date += datetime.timedelta(days=1)
             
         # calculate month score
-        month_rev_score = 0
-        month_min_score = 0
         start_date = datetime.datetime.utcnow() - datetime.timedelta(days=datetime.datetime.utcnow().day - 1)
         log(f"counting month score from {start_date}")
+        month_score = {
+            "reviews": 0,
+            "minutes": 0,
+            "xp": 0,
+        }
         while start_date.date() <= datetime.datetime.utcnow().date():
-            if consts.get_date_str(start_date) in reviews:
-                month_rev_score += reviews[consts.get_date_str(start_date)]
-                month_min_score += minutes[consts.get_date_str(start_date)]
-            
+            if consts.get_date_str(start_date) in stats:
+                month_score["reviews"] += stats[consts.get_date_str(start_date)]["reviews"]
+                month_score["minutes"] += stats[consts.get_date_str(start_date)]["minutes"]
+                month_score["xp"] += stats[consts.get_date_str(start_date)]["xp"]
+
             start_date += datetime.timedelta(days=1)
         
-        for collection, score, time in \
-            zip(["today", "week", "month"], 
-                [day_rev_score, week_rev_score, month_rev_score], 
-                [day_min_score, week_min_score, month_min_score]):
+        for collection, score in [("today", day_score), ("week", week_score), ("month", month_score)]: 
             
             db_id = self.model.get(f'user_{collection}')
+            reviews, minutes, xp = score["reviews"], score["minutes"], score["xp"]
+            json_data = {
+                "reviews": reviews,
+                "time": minutes,
+                "xp": xp
+            }
             
             if db_id:                
-                r = requests.patch(self.PB.url + f"api/collections/{collection}_leaderboard/records/{db_id}", json={
-                    "reviews": score,
-                    "time": time
-                }, headers=self._get_headers())
+                r = requests.patch(self.PB.url + f"api/collections/{collection}_leaderboard/records/{db_id}", 
+                                   json=json_data, headers=self._get_headers())
             else:
-                r = requests.post(self.PB.url + f"api/collections/{collection}_leaderboard/records/", json={
-                    "user": self.id,
-                    "reviews": score,
-                    "time": time
-                }, headers=self._get_headers())
+                r = requests.post(self.PB.url + f"api/collections/{collection}_leaderboard/records/", 
+                                  json=json_data, headers=self._get_headers())
                 
                 self.model[f'user_{collection}'] = r.json()['id']
                 update_user_db = True
@@ -286,7 +311,7 @@ class User:
                 
                 raise UpdateLBError(f'update {collection} leaderboard failed')
             
-            log(f'updated {collection} leaderboard with {score} reviews and {time} minutes')
+            log(f'updated {collection} leaderboard with {score}')
         
         if update_user_db:
             r = requests.patch(self.PB.url + f"api/collections/users/records/{self.id}", json=self.model, headers=self._get_headers())
