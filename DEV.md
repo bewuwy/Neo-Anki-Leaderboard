@@ -4,17 +4,17 @@
 
 ### Windows
 ```bat
-xcopy /y * C:\Users\[user]\AppData\Roaming\Anki2\addons21\nal-dev
+xcopy /y src\* C:\Users\[user]\AppData\Roaming\Anki2\addons21\nal-dev
 ```
 
 or
 
 ```bat
-xcopy /y * %AppData%\Anki2\addons21\nal-dev
+xcopy /y src\* %AppData%\Anki2\addons21\nal-dev
 ```
 
 ### Linux
 
 ```bash
-clear & cp * /home/[user]/.local/share/Anki2/addons21/1894428367dev & anki | grep ^NAL
+clear & cp src/* /home/[user]/.local/share/Anki2/addons21/1894428367dev & anki | grep ^NAL
 ```
