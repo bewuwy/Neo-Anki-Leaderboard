@@ -5,6 +5,7 @@ from consts import *
 import login, about
 
 import anki_stats
+from pocketbase_api import UpdateLBError
 import xp_system
 from dev import info, error, popup
 

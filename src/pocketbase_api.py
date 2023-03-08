@@ -3,7 +3,7 @@ import datetime
 from aqt import mw
 
 import anki_stats
-from anki_stats import get_daily_reviews_since, get_time_daily
+from anki_stats import get_daily_reviews_since
 import consts
 
 from dev import *
@@ -194,7 +194,16 @@ class User:
         
         return r.status_code == 200 and update_lb
 
-    def set_multiple_reviews(self, reviews):
+    def set_multiple_reviews(self, reviews: dict):
+        """Set multiple reviews at once in pocketbase, then update user's leaderboards
+
+        Args:
+            reviews (dict): reviews to set
+
+        Returns:
+            bool: success
+        """
+        
         curr_reviews = self.get_reviews()
         
         for rev_keys in reviews:
@@ -203,7 +212,7 @@ class User:
         r = requests.patch(self.PB.url + f"api/collections/user_data/records/{self.model['user_data']}", json={
             "reviews": curr_reviews
         }, headers=self._get_headers())
-        update_lb = self.update_leaderboards(curr_reviews)
+        update_lb = self.update_leaderboards()
         
         if r.status_code != 200:
             log('set multiple reviews failed')
@@ -325,8 +334,14 @@ class User:
         return success
         
     def full_sync(self):
+        """Sync all reviews since the beginning of the year to pocketbase (for heatmap purposes)
+
+        Returns:
+            bool: success
+        """
+        
         reviews = get_daily_reviews_since(datetime.datetime(datetime.datetime.utcnow().year, 1, 1))
         
-        log(f'full sync')
+        log(f'Full sync start')
 
         return self.set_multiple_reviews(reviews)

@@ -37,14 +37,6 @@ def get_review_count_retention(day_dt=datetime.datetime.today()):
     
     return reviews, retention_rate
 
-def get_review_count_since(dt):
-    start = int(dt.timestamp() * 1000)
-
-    reviews = mw.col.db.scalar(
-        "SELECT COUNT(*) FROM revlog WHERE id >= ? AND ease > 0", start)
-
-    return reviews
-
 def get_daily_reviews_since(dt):
     end = datetime.datetime.today() + datetime.timedelta(days=1)
     start_i = dt
@@ -81,19 +73,6 @@ def get_time_spent(day_dt=datetime.datetime.today(), minutes=True):
         time = round(time, 1)
     
     return time
-
-def get_time_daily(start_dt, end_dt=datetime.datetime.today(), minutes=True):
-    times = {}
-    
-    start_dt = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_dt = end_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    while start_dt <= end_dt:
-        times[consts.get_date_str(start_dt)] = get_time_spent(start_dt, minutes)
-        
-        start_dt += datetime.timedelta(days=1)
-        
-    return times
 
 #* OVERALL
 

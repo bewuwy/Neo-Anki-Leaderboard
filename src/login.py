@@ -85,5 +85,5 @@ def login_user(user, password) -> None:
     
     return on_login_success
 
-def on_login_success(result) -> None:
+def on_login_success(_) -> None:
     pass
