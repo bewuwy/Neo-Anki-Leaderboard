@@ -326,12 +326,12 @@ class User:
         
         last_sync = self.PB.last_sync
         
-        reviews, streak = get_daily_reviews_since(last_sync)
+        reviews, _ = get_daily_reviews_since(last_sync)
         self.update_pb_data(reviews)
         
         self.PB.last_sync = datetime.datetime.utcnow()
         self.PB.save_user_login()
-            
+    
     def full_sync(self):
         """Sync all reviews since the beginning of the year to pocketbase (for heatmap purposes)
 
