@@ -1,4 +1,4 @@
-VERSION = "0.4.10"
+VERSION = "0.5"
 APP_NAME = "NeoLeaderBoard"
 SHORT_APP_NAME = "NeoLB"
 
