@@ -12,7 +12,11 @@ ADDON_FOLDER = os.path.basename(pathlib.Path(__file__).parent.resolve())
 LEADERBOARD_WEBSITE = 'https://neoankilb.vercel.app/'
 GITHUB_URL = "https://github.com/bewuwy/Neo-Anki-Leaderboard/"
 
-def get_date_str(date):
+import datetime
+def get_date_str(date=None):
+    if date is None:
+        date = datetime.datetime.utcnow()
+    
     return date.strftime("%Y-%m-%d")
 
 DEV_MODE = ADDON_FOLDER.endswith("dev")

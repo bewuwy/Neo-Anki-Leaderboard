@@ -112,11 +112,9 @@ def setup_menu():
     if DEV_MODE:
         debug_action = QAction("Debug", mw)
         def on_debug_action():
-            today_reviews, today_retention = anki_stats.get_review_count_retention()
+            s = anki_stats.get_current_streak()
             
-            xp = xp_system.calc_xp(today_reviews, today_retention)
-            
-            popup(f"Today's reviews: {today_reviews}\nToday's retention: {today_retention}\nXP: {xp}")
+            popup(f"Current streak: {s}")
         
         qconnect(debug_action.triggered, on_debug_action)
         menu.addAction(debug_action)

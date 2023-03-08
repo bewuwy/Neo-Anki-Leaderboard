@@ -67,12 +67,8 @@ def on_anki_sync():
     # # delete thread after it's finished
     # # mw.lb_sync_thread.finished.connect(lambda: delattr(mw, "lb_sync_thread"))
     
-    r = anki_stats.get_review_count()
-    
     try:
-        mw.NAL_PB.user.set_reviews(datetime.datetime.utcnow(), r)
-        
-        log(f"Syncing review count to NAL: {r}")
+        mw.NAL_PB.user.sync()
     except AttributeError:
         log("User not logged in and tried to sync")
     except UpdateLBError:

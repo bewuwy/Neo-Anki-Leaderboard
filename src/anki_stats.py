@@ -44,15 +44,26 @@ def get_daily_reviews_since(dt):
     
     data = {}
     
+    streak_current = 0
+    streak_highest = 0
+    
     while start_i < end:        
         reviews = get_review_count(start_i)
         
         if reviews > 0:        
             data[consts.get_date_str(start_i)] = reviews
+            streak_current += 1
+        else:
+            if streak_current > streak_highest:
+                streak_highest = streak_current
+                
+            # if its today, dont reset streak
+            if start_i + datetime.timedelta(days=1) < end:
+                streak_current = 0
         
         start_i += datetime.timedelta(days=1)
 
-    return data
+    return data, {"current": streak_current, "highest": streak_highest}
 
 #* TIME SPENT
 
@@ -73,6 +84,26 @@ def get_time_spent(day_dt=datetime.datetime.today(), minutes=True):
         time = round(time, 1)
     
     return time
+
+#* STREAK
+
+def get_current_streak():
+    """Get current daily streak
+
+    Returns:
+        int: streak
+    """
+    
+    dt = datetime.datetime.utcnow()
+    streak = 0
+    
+    r = get_review_count(dt)
+    while r > 0:
+        dt -= datetime.timedelta(days=1)
+        r = get_review_count(dt)
+        streak += 1
+        
+    return streak
 
 #* OVERALL
 

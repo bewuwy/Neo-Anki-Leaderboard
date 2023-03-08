@@ -15,6 +15,7 @@ class PB:
     def __init__(self, url):
         self.url = url
         self.user = None
+        self.last_sync: datetime.datetime = datetime.datetime.fromtimestamp(mw.addonManager.getConfig(consts.ADDON_FOLDER).get("last_sync", 0))
 
     def login(self, username, password):
         r = requests.post(self.url + "api/collections/users/auth-with-password", json={
@@ -80,14 +81,17 @@ class PB:
         return True
         
     def save_user_login(self):
-        # write user data to config
+        """write user data to config
+        """
+        
         config = mw.addonManager.getConfig(consts.ADDON_FOLDER)
         if not config:
             config = {}
         
+        config["last_sync"] = self.last_sync.timestamp()
         config["user_data"] = {
             "record": self.user.model,
-            "token": self.user.token
+            "token": self.user.token,
         }
         mw.addonManager.writeConfig(consts.ADDON_FOLDER, config)
         
@@ -108,7 +112,7 @@ class PB:
         self = None
 
 class User:
-    def __init__(self, user_data, PB):
+    def __init__(self, user_data, PB: PB):
         self.token = user_data["token"]
         self.id = user_data['record']["id"]
         self.model = user_data['record']
@@ -166,52 +170,45 @@ class User:
         
         return curr_reviews
     
-    def set_reviews(self, date: datetime.datetime, reviews_number: int):
-        """Set users reviews for a specific date in pocketbase, then update user's leaderboards
-
-        Args:
-            date (datetime): date to update
-            reviews_number (int): number of reviews
+    def get_user_data(self):
+        """Get user data from pocketbase
 
         Returns:
-            bool: success
+            dict: user data
         """
         
-        # TODO: set reviews since last sync
-        curr_reviews = self.get_reviews()
+        user_data_id = self.model["user_data"]
         
-        date_str = consts.get_date_str(date)
-        curr_reviews[date_str] = reviews_number
+        r = requests.get(self.PB.url + f"api/collections/user_data/records/{user_data_id}/", headers=self._get_headers())
+        data = r.json()
         
-        r = requests.patch(self.PB.url + f"api/collections/user_data/records/{self.model['user_data']}", json={
-            "reviews": curr_reviews
-        }, headers=self._get_headers())        
-        update_lb = self.update_leaderboards()
-        
-        if r.status_code != 200:
-            log('set reviews failed')
-            log(r.json())
-        
-        return r.status_code == 200 and update_lb
+        return data
 
-    def set_multiple_reviews(self, reviews: dict):
+    def update_pb_data(self, reviews: dict, curr_streak:int=-1, highest_streak:int=-1):
         """Set multiple reviews at once in pocketbase, then update user's leaderboards
 
         Args:
             reviews (dict): reviews to set
+            curr_streak (int): current streak
+            highest_streak (int): highest streak
 
         Returns:
             bool: success
         """
         
-        curr_reviews = self.get_reviews()
+        curr_data = self.get_user_data()
         
         for rev_keys in reviews:
-            curr_reviews[rev_keys] = reviews[rev_keys]
+            curr_data["reviews"][rev_keys] = reviews[rev_keys]
         
-        r = requests.patch(self.PB.url + f"api/collections/user_data/records/{self.model['user_data']}", json={
-            "reviews": curr_reviews
-        }, headers=self._get_headers())
+        if curr_streak >= 0:
+            curr_data["streak_current"] = curr_streak
+        if highest_streak >= 0:
+            curr_data["streak_highest"] = max(curr_data["streak_highest"], highest_streak)
+        
+        r = requests.patch(self.PB.url + f"api/collections/user_data/records/{self.model['user_data']}", 
+                           json=curr_data, headers=self._get_headers())
+        
         update_lb = self.update_leaderboards()
         
         if r.status_code != 200:
@@ -224,7 +221,8 @@ class User:
         user_id = self.model["id"]
         
         r_filter = f"owner=\"{user_id}\""
-        r = requests.get(self.PB.url + f"api/collections/medals/records/?filter={r_filter}", headers=self._get_headers())
+        r = requests.get(self.PB.url + f"api/collections/medals/records/?filter={r_filter}", 
+                         headers=self._get_headers())
 
         if r.status_code != 200:
             log('get medals failed')
@@ -332,7 +330,19 @@ class User:
                 log(r.json())
         
         return success
+    
+    def sync(self):
+        """Sync reviews, streak and lb since last sync to pocketbase
+        """
         
+        last_sync = self.PB.last_sync
+        
+        reviews, streak = get_daily_reviews_since(last_sync)
+        self.update_pb_data(reviews)
+        
+        self.PB.last_sync = datetime.datetime.utcnow()
+        self.PB.save_user_login()
+            
     def full_sync(self):
         """Sync all reviews since the beginning of the year to pocketbase (for heatmap purposes)
 
@@ -340,8 +350,10 @@ class User:
             bool: success
         """
         
-        reviews = get_daily_reviews_since(datetime.datetime(datetime.datetime.utcnow().year, 1, 1))
+        reviews, streak = get_daily_reviews_since(datetime.datetime.fromtimestamp(0))
         
         log(f'Full sync start')
+        log(f'{len(reviews)} days with reviews found')
+        log(f'{streak} days streak')
 
-        return self.set_multiple_reviews(reviews)
+        return self.update_pb_data(reviews, curr_streak=streak["current"], highest_streak=streak["highest"])
