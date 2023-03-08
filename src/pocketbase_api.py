@@ -158,18 +158,6 @@ class User:
         
         return r.status_code == 200
     
-    def get_reviews(self):
-        user_data_id = self.model["user_data"]
-        
-        r = requests.get(self.PB.url + f"api/collections/user_data/records/{user_data_id}/", headers=self._get_headers())
-        data = r.json()
-        
-        curr_reviews = data["reviews"]
-        if not curr_reviews:
-            curr_reviews = {}
-        
-        return curr_reviews
-    
     def get_user_data(self):
         """Get user data from pocketbase
 
@@ -183,6 +171,20 @@ class User:
         data = r.json()
         
         return data
+
+    def get_medals(self):
+        user_id = self.model["id"]
+        
+        r_filter = f"owner=\"{user_id}\""
+        r = requests.get(self.PB.url + f"api/collections/medals/records/?filter={r_filter}", 
+                         headers=self._get_headers())
+
+        if r.status_code != 200:
+            log('get medals failed')
+            log(r.json())
+            return []
+        
+        return r.json()['items']
 
     def update_pb_data(self, reviews: dict, curr_streak:int=-1, highest_streak:int=-1):
         """Set multiple reviews at once in pocketbase, then update user's leaderboards
@@ -216,20 +218,6 @@ class User:
             log(r.json())
         
         return r.status_code == 200 and update_lb
-
-    def get_medals(self):
-        user_id = self.model["id"]
-        
-        r_filter = f"owner=\"{user_id}\""
-        r = requests.get(self.PB.url + f"api/collections/medals/records/?filter={r_filter}", 
-                         headers=self._get_headers())
-
-        if r.status_code != 200:
-            log('get medals failed')
-            log(r.json())
-            return []
-        
-        return r.json()['items']
 
     def update_leaderboards(self):
         """Update user's leaderboards on pocketbase
@@ -289,6 +277,7 @@ class User:
 
             start_date += datetime.timedelta(days=1)
         
+        # update pb collections
         for collection, score in [("today", day_score), ("week", week_score), ("month", month_score)]: 
             
             db_id = self.model.get(f'user_{collection}')
