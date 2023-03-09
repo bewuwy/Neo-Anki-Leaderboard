@@ -20,3 +20,6 @@ def get_date_str(date=None):
     return date.strftime("%Y-%m-%d")
 
 DEV_MODE = ADDON_FOLDER.endswith("dev")
+
+# timestamp of 2000-01-01 00:00:00
+TIMESTAMP_0 = 946684800

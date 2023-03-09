@@ -15,7 +15,8 @@ class PB:
     def __init__(self, url):
         self.url = url
         self.user = None
-        self.last_sync: datetime.datetime = datetime.datetime.fromtimestamp(mw.addonManager.getConfig(consts.ADDON_FOLDER).get("last_sync", 0))
+        self.last_sync: datetime.datetime = datetime.datetime.fromtimestamp(
+            mw.addonManager.getConfig(consts.ADDON_FOLDER).get("last_sync", TIMESTAMP_0))
 
     def login(self, username, password):
         r = requests.post(self.url + "api/collections/users/auth-with-password", json={
@@ -339,7 +340,7 @@ class User:
             bool: success
         """
         
-        reviews, streak = get_daily_reviews_since(datetime.datetime.fromtimestamp(0))
+        reviews, streak = get_daily_reviews_since(datetime.datetime.fromtimestamp(TIMESTAMP_0))
         
         log(f'Full sync start')
         log(f'{len(reviews)} days with reviews found')
