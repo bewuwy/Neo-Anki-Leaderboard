@@ -279,7 +279,12 @@ class User:
             start_date += datetime.timedelta(days=1)
         
         # update pb collections
-        for collection, score in [("today", day_score), ("week", week_score), ("month", month_score)]: 
+        for collection, score in [("today", day_score), ("week", week_score), ("month", month_score)]:
+            if not score:
+                log(f"no {collection} score")
+                continue
+            
+            log(score)
             
             db_id = self.model.get(f'user_{collection}')
             reviews, minutes, xp = score["reviews"], score["minutes"], score["xp"]
